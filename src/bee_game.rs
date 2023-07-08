@@ -218,9 +218,10 @@ fn spawn_piller(commands: &mut Commands, pillar_shared: &ResMut<PillarShared>) {
     ));
 }
 
-fn jump_input(keys: Res<Input<KeyCode>>, mut pillar_shared: ResMut<PillarShared>, time: Res<Time>) {
+fn jump_input(keys: Res<Input<KeyCode>>, mut pillar_shared: ResMut<PillarShared>, time: Res<Time>, asset_server: Res<AssetServer>, audio: Res<Audio>) {
     if keys.just_pressed(KeyCode::Space) {
         pillar_shared.y_vel = 4.0;
+        audio.play(asset_server.load("sounds/beep.wav"));
     }
 
     pillar_shared.y_vel -= 10.0 * time.delta_seconds();

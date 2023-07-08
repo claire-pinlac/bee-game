@@ -67,7 +67,7 @@ features = [
     "exr",             # OpenEXR advanced image format
     "basis-universal", # Basis Universal GPU texture compression format
     #"flac",            # Audio: FLAC lossless format
-    #"mp3",             # Audio: MP3 format (not recommended)
+    "mp3",             # Audio: MP3 format (not recommended)
     #"wav",             # Audio: Uncompressed WAV
     #"symphonia-all",   # All Audio formats supported by the Symphonia library
 

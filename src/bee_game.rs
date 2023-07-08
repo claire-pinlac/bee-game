@@ -16,7 +16,9 @@ impl Plugin for BeeGame {
             .add_system(bee_fly)
             .add_system(text_write)
             .add_system(text_update)
-            .add_system(anim_handler);
+            .add_system(anim_handler)
+            .add_startup_system(audio_setup);
+        
     }
 }
 
@@ -295,4 +297,8 @@ fn anim_handler(mut query: Query<(&mut TextureAtlasSprite, &mut AnimInfo)>, time
             tas.index = (tas.index + 1) % ai.num;
         }
     }
+}
+
+fn audio_setup(asset_server: Res<AssetServer>, audio: Res<Audio>) {
+    audio.play(asset_server.load("sounds/farm.mp3"));
 }

@@ -264,7 +264,7 @@ fn text_write(mut commands: Commands, asset_server: Res<AssetServer>) {
         TextBundle::from_section(
             "BEE",
             TextStyle {
-                font: asset_server.load("fonts/Valorax-lg25V.otf"),
+                font: asset_server.load("fonts/goodtimes.otf"),
                 font_size: 100.0,
                 color: Color::WHITE,
             },

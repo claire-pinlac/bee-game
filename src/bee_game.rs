@@ -46,7 +46,7 @@ struct PillarShared {
     y_pos_bounds: (f32, f32),
     spawn_timer: Timer,
     texture: Handle<Image>,
-    prop_texture: Handle<Image>,
+    prop_texture: Handle<TextureAtlas>,
 }
 
 fn setup(
@@ -90,11 +90,13 @@ fn setup(
 
     setup_scoreboard(&mut commands, &asset_server);
 
-    setup_pillars(&mut commands, &asset_server, &wins);
+    setup_pillars(&mut commands, &asset_server, &wins, &mut texture_atlases);
 
     setup_bee(&mut commands, &asset_server, &mut texture_atlases);
 
     setup_clouds(&mut commands, &asset_server, &wins);
+
+    setup_babees(&mut commands, &asset_server, &wins);
 }
 
 #[derive(Component)]
@@ -202,8 +204,22 @@ impl Collider {
     }
 }
 
-fn setup_pillars(commands: &mut Commands, asset_server: &Res<AssetServer>, wins: &Query<&Window>) {
+fn setup_pillars(
+    commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
+    wins: &Query<&Window>,
+    texture_atlases: &mut ResMut<Assets<TextureAtlas>>,
+) {
     let window = wins.single();
+
+    let texture_atlas = texture_atlases.add(TextureAtlas::from_grid(
+        asset_server.load("textures/propeller.png"),
+        Vec2::new(82.0, 28.0),
+        2,
+        1,
+        Some(Vec2::new(1.0, 0.0)),
+        None,
+    ));
 
     let mut timer = Timer::new(Duration::from_millis(2500), TimerMode::Repeating);
     timer.set_elapsed(Duration::from_millis(2500));
@@ -215,7 +231,7 @@ fn setup_pillars(commands: &mut Commands, asset_server: &Res<AssetServer>, wins:
         y_pos_bounds: (-200.0, 200.0),
         spawn_timer: timer,
         texture: asset_server.load("textures/pipe.png"),
-        prop_texture: asset_server.load("textures/propeller.png"),
+        prop_texture: texture_atlas,
     };
 
     commands.insert_resource(pillar_shared);
@@ -247,7 +263,7 @@ fn setup_bee(
         Vec2::new(32.0, 32.0),
         2,
         1,
-        None,
+        Some(Vec2::new(1.0, 0.0)),
         None,
     ));
 
@@ -282,6 +298,27 @@ fn setup_bee(
         },
         BeeGameMarker,
     ));
+}
+
+fn setup_babees(commands: &mut Commands, asset_server: &Res<AssetServer>, wins: &Query<&Window>) {
+    let window = wins.single();
+    let respawn_bounds = (-window.width() / 2.0 - 200.0, window.width() / 2.0 + 200.0);
+    for _ in 0..20 {
+        let x = rand::random::<f32>() * (respawn_bounds.1 - respawn_bounds.0) + (respawn_bounds.0);
+        let y = window.height() * (rand::random::<f32>() - 0.5);
+        commands.spawn((
+            SpriteBundle {
+                transform: Transform::from_xyz(x, y, 60.0).with_scale(Vec3::splat(2.0)),
+                texture: asset_server.load("textures/babee.png"),
+                ..Default::default()
+            },
+            Cloud {
+                vel: rand::random::<f32>() * 2.0 + 1.0,
+                respawn_bounds,
+            },
+            BeeGameMarker,
+        ));
+    }
 }
 
 #[derive(Component)]
@@ -365,7 +402,6 @@ fn pillar_score(
             if t.translation.x > bee.1.center.x {
                 p.passed_bee = true;
                 game_info.score += 1;
-                println!("Score!");
             }
         }
     }
@@ -376,50 +412,64 @@ fn spawn_piller(commands: &mut Commands, pillar_shared: &ResMut<PillarShared>) {
 
     let y_offset = (rand::random::<f32>() - 0.5) * 200.0;
 
-    commands.spawn((
-        SpriteBundle {
-            sprite: Sprite {
-                custom_size: None,
+    commands
+        .spawn((
+            SpriteBundle {
+                sprite: Sprite {
+                    custom_size: None,
+                    ..Default::default()
+                },
+                transform: Transform::from_xyz(pillar_shared.x_pos_bounds.0, 0.0, 80.0)
+                    .with_scale(Vec3::ONE * 2.5),
+                texture: pillar_shared.texture.clone(),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(pillar_shared.x_pos_bounds.0, 0.0, 80.0)
-                .with_scale(Vec3::ONE * 2.5),
-            texture: pillar_shared.texture.clone(),
-            ..Default::default()
-        },
-        Pillar {
-            passed_bee: false,
-            y_offset,
-        },
-        Collider {
-            colliders: vec![
-                AABB {
-                    l: -HALF_WID,
-                    r: HALF_WID,
-                    t: 1000.0,
-                    b: 43.0,
+            Pillar {
+                passed_bee: false,
+                y_offset,
+            },
+            Collider {
+                colliders: vec![
+                    AABB {
+                        l: -HALF_WID,
+                        r: HALF_WID,
+                        t: 1000.0,
+                        b: 43.0,
+                    },
+                    AABB {
+                        l: -HALF_WID,
+                        r: HALF_WID,
+                        t: -50.0,
+                        b: -1000.0,
+                    },
+                ],
+            },
+            BeeGameMarker,
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                SpriteSheetBundle {
+                    transform: Transform::from_xyz(0.0, 80.0, 0.0),
+                    texture_atlas: pillar_shared.prop_texture.clone(),
+                    ..Default::default()
                 },
-                AABB {
-                    l: -HALF_WID,
-                    r: HALF_WID,
-                    t: -50.0,
-                    b: -1000.0,
+                AnimInfo {
+                    timer: Timer::new(Duration::from_millis(250), TimerMode::Repeating),
+                    num: 2,
                 },
-            ],
-        },
-        BeeGameMarker,
-    )).with_children(|parent| {
-        parent.spawn(SpriteBundle {
-            transform: Transform::from_xyz(0.0, 80.0, 0.0),
-            texture: pillar_shared.prop_texture.clone(),
-            ..Default::default()
+            ));
+            parent.spawn((
+                SpriteSheetBundle {
+                    transform: Transform::from_xyz(0.0, -90.0, 0.0),
+                    texture_atlas: pillar_shared.prop_texture.clone(),
+                    ..Default::default()
+                },
+                AnimInfo {
+                    timer: Timer::new(Duration::from_millis(250), TimerMode::Repeating),
+                    num: 2,
+                },
+            ));
         });
-        parent.spawn(SpriteBundle {
-            transform: Transform::from_xyz(0.0, -90.0, 0.0),
-            texture: pillar_shared.prop_texture.clone(),
-            ..Default::default()
-        });
-    });
 }
 
 fn jump_input(

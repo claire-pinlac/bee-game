@@ -1,9 +1,8 @@
 use std::time::Duration;
 
-use bevy::prelude::*;
-use crate::GameState;
 use super::bee_game::{AnimInfo, BeeFly};
-
+use crate::GameState;
+use bevy::prelude::*;
 
 pub struct MenuPlugin;
 
@@ -25,7 +24,7 @@ enum ButtonIdent {
 }
 
 fn menu_setup(
-    mut commands: Commands, 
+    mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
@@ -125,92 +124,87 @@ fn menu_setup(
                 });
         });
 
-        let center = Vec2::new(0.0, 0.0);
-        let texture_atlas = texture_atlases.add(TextureAtlas::from_grid(
-            asset_server.load("textures/bee.png"),
-            Vec2::new(32.0, 32.0),
-            2,
-            1,
-            None,
-            None,
-        ));
-    
-        commands.spawn((
-            SpriteSheetBundle {
-                sprite: TextureAtlasSprite {
-                    custom_size: Some(Vec2 { x: 80.0, y: 80.0 }),
-                    ..Default::default()
-                },
-                transform: Transform::from_xyz(center.x, center.y-300.0, 500.0),
-                texture_atlas:texture_atlas.clone(),
+    let center = Vec2::new(0.0, 0.0);
+    let texture_atlas = texture_atlases.add(TextureAtlas::from_grid(
+        asset_server.load("textures/bee.png"),
+        Vec2::new(32.0, 32.0),
+        2,
+        1,
+        Some(Vec2::new(1.0, 0.0)),
+        None,
+    ));
+
+    commands.spawn((
+        SpriteSheetBundle {
+            sprite: TextureAtlasSprite {
+                custom_size: Some(Vec2 { x: 80.0, y: 80.0 }),
                 ..Default::default()
             },
-            BeeFly {
-                aim: center,
-                center,
-                width: 900.0,
-                height: 800.0,
-                timer: Timer::new(Duration::from_millis(2000), TimerMode::Repeating),
-            },
-            AnimInfo {
-                timer: Timer::new(Duration::from_millis(500), TimerMode::Repeating),
-                num: 2,
-            },
-            
-            MenuMarker,
-        ));
+            transform: Transform::from_xyz(center.x, center.y - 300.0, 500.0),
+            texture_atlas: texture_atlas.clone(),
+            ..Default::default()
+        },
+        BeeFly {
+            aim: center,
+            center,
+            width: 900.0,
+            height: 800.0,
+            timer: Timer::new(Duration::from_millis(2000), TimerMode::Repeating),
+        },
+        AnimInfo {
+            timer: Timer::new(Duration::from_millis(500), TimerMode::Repeating),
+            num: 2,
+        },
+        MenuMarker,
+    ));
 
-        commands.spawn((
-            SpriteSheetBundle {
-                sprite: TextureAtlasSprite {
-                    custom_size: Some(Vec2 { x: 80.0, y: 80.0 }),
-                    ..Default::default()
-                },
-                transform: Transform::from_xyz(center.x-500.0, center.y-350.0, 500.0),
-                texture_atlas:texture_atlas.clone(),
+    commands.spawn((
+        SpriteSheetBundle {
+            sprite: TextureAtlasSprite {
+                custom_size: Some(Vec2 { x: 80.0, y: 80.0 }),
                 ..Default::default()
             },
-            BeeFly {
-                aim: center,
-                center,
-                width: 900.0,
-                height: 800.0,
-                timer: Timer::new(Duration::from_millis(2000), TimerMode::Repeating),
-            },
-            AnimInfo {
-                timer: Timer::new(Duration::from_millis(500), TimerMode::Repeating),
-                num: 2,
-            },
-            
-            MenuMarker,
-        ));
+            transform: Transform::from_xyz(center.x - 500.0, center.y - 350.0, 500.0),
+            texture_atlas: texture_atlas.clone(),
+            ..Default::default()
+        },
+        BeeFly {
+            aim: center,
+            center,
+            width: 900.0,
+            height: 800.0,
+            timer: Timer::new(Duration::from_millis(2000), TimerMode::Repeating),
+        },
+        AnimInfo {
+            timer: Timer::new(Duration::from_millis(500), TimerMode::Repeating),
+            num: 2,
+        },
+        MenuMarker,
+    ));
 
-        commands.spawn((
-            SpriteSheetBundle {
-                sprite: TextureAtlasSprite {
-                    custom_size: Some(Vec2 { x: 80.0, y: 80.0 }),
-                    ..Default::default()
-                },
-                transform: Transform::from_xyz(center.x+500.0, center.y-350.0, 500.0),
-                texture_atlas:texture_atlas.clone(),
+    commands.spawn((
+        SpriteSheetBundle {
+            sprite: TextureAtlasSprite {
+                custom_size: Some(Vec2 { x: 80.0, y: 80.0 }),
                 ..Default::default()
             },
-            BeeFly {
-                aim: center,
-                center,
-                width: 900.0,
-                height: 800.0,
-                timer: Timer::new(Duration::from_millis(2000), TimerMode::Repeating),
-            },
-            AnimInfo {
-                timer: Timer::new(Duration::from_millis(500), TimerMode::Repeating),
-                num: 2,
-            },
-            
-            MenuMarker,
-        ));
-
-
+            transform: Transform::from_xyz(center.x + 500.0, center.y - 350.0, 500.0),
+            texture_atlas: texture_atlas.clone(),
+            ..Default::default()
+        },
+        BeeFly {
+            aim: center,
+            center,
+            width: 900.0,
+            height: 800.0,
+            timer: Timer::new(Duration::from_millis(2000), TimerMode::Repeating),
+        },
+        AnimInfo {
+            timer: Timer::new(Duration::from_millis(500), TimerMode::Repeating),
+            num: 2,
+        },
+        MenuMarker,
+    ));
 }
 
 const NORMAL_BUTTON: Color = Color::rgb(1.0, 0.92, 0.80);
@@ -255,4 +249,3 @@ fn cleanup(mut commands: Commands, query: Query<Entity, With<MenuMarker>>) {
         commands.entity(e).despawn_recursive();
     }
 }
-

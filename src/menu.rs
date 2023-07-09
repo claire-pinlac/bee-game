@@ -16,6 +16,7 @@ impl Plugin for MenuPlugin {
 struct MenuMarker;
 
 fn menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let _ = asset_server.load::<Image, &str>("textures/bg2.png");
     commands.spawn((
         Camera2dBundle {
             camera: Camera {

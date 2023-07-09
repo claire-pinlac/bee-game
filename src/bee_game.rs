@@ -79,6 +79,15 @@ fn setup(
         BeeGameMarker,
     ));
 
+    commands.spawn((
+        SpriteBundle {
+            transform: Transform::from_xyz(0.0, 0.0, 10.0).with_scale(Vec3::splat(0.8)),
+            texture: asset_server.load("textures/bg2.png"),
+            ..Default::default()
+        },
+        BeeGameMarker,
+    ));
+
     setup_pillars(&mut commands, &asset_server, &wins);
 
     setup_bee(&mut commands, &asset_server, &mut texture_atlases);

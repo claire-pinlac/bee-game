@@ -1,31 +1,39 @@
 use std::time::Duration;
 
 use bevy::{core_pipeline::bloom::BloomSettings, prelude::*};
-//use bevy_kira_audio::AudioPlugin;
+use bevy_kira_audio::AudioPlugin;
 use bevy_prototype_debug_lines::*;
+
+use crate::GameState;
 
 pub struct BeeGame;
 
 impl Plugin for BeeGame {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(setup)
-            .add_system(clouds_move)
-            .add_system(pillar_spawner)
-            .add_system(pillar_move)
-            .add_system(jump_input)
-            .add_system(let_it_jump)
-            .add_system(bee_fly)
-            .add_system(text_write)
-            .add_system(text_update)
-            .add_system(anim_handler)
-            .add_startup_system(audio_setup)
-            .add_system(collisions)
-            .add_system(display_colliders);
+        app.add_system(setup.in_schedule(OnEnter(GameState::Game)))
+            .add_system(clouds_move.in_set(OnUpdate(GameState::Game)))
+            .add_system(pillar_spawner.in_set(OnUpdate(GameState::Game)))
+            .add_system(pillar_move.in_set(OnUpdate(GameState::Game)))
+            .add_system(jump_input.in_set(OnUpdate(GameState::Game)))
+            .add_system(let_it_jump.in_set(OnUpdate(GameState::Game)))
+            .add_system(bee_fly.in_set(OnUpdate(GameState::Game)))
+            .add_system(text_write.in_set(OnUpdate(GameState::Game)))
+            .add_system(text_update.in_set(OnUpdate(GameState::Game)))
+            .add_system(anim_handler.in_set(OnUpdate(GameState::Game)))
+            .add_startup_system(audio_setup.in_set(OnUpdate(GameState::Game)))
+            .add_system(collisions.in_set(OnUpdate(GameState::Game)))
+            .add_system(display_colliders.in_set(OnUpdate(GameState::Game)))
+            .add_system(game_killer.in_set(OnUpdate(GameState::Game)))
+            .add_system(cleanup.in_schedule(OnExit(GameState::Game)));
     }
 }
 
+#[derive(Component)]
+struct BeeGameMarker;
+
 #[derive(Resource)]
 struct GameInfo {
+    score: u32,
     is_dead: bool,
 }
 
@@ -46,7 +54,10 @@ fn setup(
     wins: Query<&Window>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
-    commands.insert_resource(GameInfo { is_dead: false });
+    commands.insert_resource(GameInfo {
+        score: 0,
+        is_dead: false,
+    });
 
     commands.spawn((
         Camera2dBundle {
@@ -64,6 +75,7 @@ fn setup(
         BloomSettings {
             ..Default::default()
         },
+        BeeGameMarker,
     ));
 
     setup_pillars(&mut commands, &asset_server, &wins);
@@ -145,7 +157,7 @@ fn setup_pillars(commands: &mut Commands, asset_server: &Res<AssetServer>, wins:
     let window = wins.single();
 
     let mut timer = Timer::new(Duration::from_millis(2500), TimerMode::Repeating);
-    timer.set_elapsed(Duration::MAX);
+    //timer.set_elapsed(Duration::MAX);
     let pillar_shared = PillarShared {
         x_vel: 150.0,
         y_pos: 0.0,
@@ -218,6 +230,7 @@ fn setup_bee(
                 b: -35.0,
             }],
         },
+        BeeGameMarker,
     ));
 }
 
@@ -250,6 +263,7 @@ fn setup_clouds(commands: &mut Commands, asset_server: &Res<AssetServer>, wins: 
                 vel: rand::random::<f32>() * 1.0 + 0.5,
                 respawn_bounds,
             },
+            BeeGameMarker,
         ));
     }
 }
@@ -322,6 +336,7 @@ fn spawn_piller(commands: &mut Commands, pillar_shared: &ResMut<PillarShared>) {
                 },
             ],
         },
+        BeeGameMarker,
     ));
 }
 
@@ -396,6 +411,7 @@ fn text_write(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..default()
         }),
         ColorText,
+        BeeGameMarker,
     ));
 }
 
@@ -442,5 +458,17 @@ fn collisions(
 fn display_colliders(mut debug_lines: ResMut<DebugLines>, query: Query<(&Transform, &Collider)>) {
     for (t, c) in query.iter() {
         c.display(&mut debug_lines, t);
+    }
+}
+
+fn game_killer(game_info: Res<GameInfo>, mut game_state: ResMut<NextState<GameState>>) {
+    if game_info.is_dead {
+        game_state.set(GameState::Menu);
+    }
+}
+
+fn cleanup(mut commands: Commands, query: Query<Entity, With<BeeGameMarker>>) {
+    for e in query.iter() {
+        commands.entity(e).despawn();
     }
 }

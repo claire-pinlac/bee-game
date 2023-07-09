@@ -15,6 +15,12 @@ impl Plugin for MenuPlugin {
 #[derive(Component)]
 struct MenuMarker;
 
+#[derive(Component)]
+enum ButtonIdent {
+    Play,
+    Exit,
+}
+
 fn menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let _ = asset_server.load::<Image, &str>("textures/bg2.png");
     commands.spawn((
@@ -47,18 +53,21 @@ fn menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         ))
         .with_children(|parent| {
             parent
-                .spawn(ButtonBundle {
-                    style: Style {
-                        size: Size::new(Val::Px(200.0), Val::Px(75.0)),
-                        // horizontally center child text
-                        justify_content: JustifyContent::Center,
-                        // vertically center child text
-                        align_items: AlignItems::Center,
+                .spawn((
+                    ButtonBundle {
+                        style: Style {
+                            size: Size::new(Val::Px(200.0), Val::Px(75.0)),
+                            // horizontally center child text
+                            justify_content: JustifyContent::Center,
+                            // vertically center child text
+                            align_items: AlignItems::Center,
+                            ..default()
+                        },
+                        background_color: NORMAL_BUTTON.into(),
                         ..default()
                     },
-                    background_color: NORMAL_BUTTON.into(),
-                    ..default()
-                })
+                    ButtonIdent::Play,
+                ))
                 .with_children(|parent| {
                     parent.spawn(TextBundle::from_section(
                         "Play",
@@ -70,24 +79,27 @@ fn menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                     ));
                 });
             parent
-                .spawn(ButtonBundle {
-                    style: Style {
-                        size: Size::new(Val::Px(200.0), Val::Px(75.0)),
-                        // horizontally center child text
-                        justify_content: JustifyContent::Center,
-                        // vertically center child text
-                        align_items: AlignItems::Center,
-                        margin: UiRect {
-                            left: Val::Percent(5.),
-                            right: Val::Percent(5.),
-                            top: Val::Percent(5.),
-                            bottom: Val::Percent(5.),
+                .spawn((
+                    ButtonBundle {
+                        style: Style {
+                            size: Size::new(Val::Px(200.0), Val::Px(75.0)),
+                            // horizontally center child text
+                            justify_content: JustifyContent::Center,
+                            // vertically center child text
+                            align_items: AlignItems::Center,
+                            margin: UiRect {
+                                left: Val::Percent(5.),
+                                right: Val::Percent(5.),
+                                top: Val::Percent(5.),
+                                bottom: Val::Percent(5.),
+                            },
+                            ..default()
                         },
+                        background_color: NORMAL_BUTTON.into(),
                         ..default()
                     },
-                    background_color: NORMAL_BUTTON.into(),
-                    ..default()
-                })
+                    ButtonIdent::Exit,
+                ))
                 .with_children(|parent| {
                     parent.spawn(TextBundle::from_section(
                         "Exit",
@@ -107,19 +119,24 @@ const PRESSED_BUTTON: Color = Color::rgb(1.0, 0.84, 0.48);
 
 fn button_system(
     mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor, &Children),
+        (&Interaction, &mut BackgroundColor, &Children, &ButtonIdent),
         (Changed<Interaction>, With<Button>),
     >,
     mut text_query: Query<&mut Text>,
     mut game_state: ResMut<NextState<GameState>>,
+    mut exit: EventWriter<bevy::app::AppExit>,
 ) {
-    for (interaction, mut color, children) in &mut interaction_query {
+    for (interaction, mut color, children, button) in &mut interaction_query {
         let mut text = text_query.get_mut(children[0]).unwrap();
         match *interaction {
             Interaction::Clicked => {
                 //text.sections[0].value = "Bzzzz".to_string();
                 *color = PRESSED_BUTTON.into();
-                game_state.set(GameState::Game);
+                use ButtonIdent::*;
+                match button {
+                    Play => game_state.set(GameState::Game),
+                    Exit => exit.send(bevy::app::AppExit),
+                }
             }
             Interaction::Hovered => {
                 //text.sections[0].value = "Bzzzz".to_string();

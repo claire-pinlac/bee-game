@@ -16,10 +16,9 @@ impl Plugin for BeeGame {
             .add_system(jump_input.in_set(OnUpdate(GameState::Game)))
             .add_system(let_it_jump.in_set(OnUpdate(GameState::Game)))
             .add_system(bee_fly)
-            //.add_system(text_write.in_set(OnUpdate(GameState::Game)))
             .add_system(score_text_update.in_set(OnUpdate(GameState::Game)))
             .add_system(anim_handler)
-            .add_startup_system(audio_setup.in_set(OnUpdate(GameState::Game)))
+            .add_startup_system(audio_setup)
             .add_system(collisions.in_set(OnUpdate(GameState::Game)))
             //.add_system(display_colliders.in_set(OnUpdate(GameState::Game)))
             .add_system(game_killer.in_set(OnUpdate(GameState::Game)))
@@ -32,8 +31,8 @@ impl Plugin for BeeGame {
 struct BeeGameMarker;
 
 #[derive(Resource)]
-struct GameInfo {
-    score: u32,
+pub struct GameInfo {
+    pub score: u32,
     is_dead: bool,
 }
 
@@ -522,31 +521,6 @@ fn bee_fly(mut query: Query<(&mut Transform, &mut BeeFly)>, time: Res<Time>) {
 #[derive(Component)]
 struct ColorText;
 
-fn _text_write(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn((
-        TextBundle::from_section(
-            "BEE",
-            TextStyle {
-                font: asset_server.load("fonts/goodtimes.otf"),
-                font_size: 100.0,
-                color: Color::WHITE,
-            },
-        )
-        .with_text_alignment(TextAlignment::Center)
-        .with_style(Style {
-            position_type: PositionType::Absolute,
-            position: UiRect {
-                bottom: Val::Px(5.0),
-                right: Val::Px(15.0),
-                ..default()
-            },
-            ..default()
-        }),
-        ColorText,
-        BeeGameMarker,
-    ));
-}
-
 fn score_text_update(game_info: Res<GameInfo>, mut query: Query<&mut Text, With<ScoreText>>) {
     for mut text in query.iter_mut() {
         text.sections[0].value = format!("{}", game_info.score);
@@ -571,6 +545,8 @@ fn collisions(
     bees: Query<(&Transform, &Collider), Without<Pillar>>,
     pillars: Query<(&Transform, &Collider), With<Pillar>>,
     mut game_info: ResMut<GameInfo>,
+    asset_server: Res<AssetServer>,
+    audio: Res<Audio>,
 ) {
     let bee = bees.single();
     let mut collided = false;
@@ -583,6 +559,7 @@ fn collisions(
 
     if collided {
         game_info.is_dead = true;
+        audio.play(asset_server.load("sounds/dead.wav"));
     }
 }
 

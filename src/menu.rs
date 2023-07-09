@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use super::bee_game::{AnimInfo, BeeFly};
+use super::bee_game::{AnimInfo, BeeFly, GameInfo};
 use crate::GameState;
 use bevy::prelude::*;
 
@@ -27,6 +27,7 @@ fn menu_setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    game_info: Option<Res<GameInfo>>,
 ) {
     let _ = asset_server.load::<Image, &str>("textures/bg2.png");
     commands.spawn((
@@ -128,7 +129,7 @@ fn menu_setup(
                 });
         });
 
-    let center = Vec2::new(0.0, 0.0);
+    let center = Vec2::new(0.0, 90.0);
     let texture_atlas = texture_atlases.add(TextureAtlas::from_grid(
         asset_server.load("textures/bee.png"),
         Vec2::new(32.0, 32.0),
@@ -160,8 +161,8 @@ fn menu_setup(
         BeeFly {
             aim: center,
             center,
-            width: 900.0,
-            height: 800.0,
+            width: 1200.0,
+            height: 500.0,
             timer: Timer::new(Duration::from_millis(2000), TimerMode::Repeating),
         },
         AnimInfo {
@@ -184,8 +185,8 @@ fn menu_setup(
         BeeFly {
             aim: center,
             center,
-            width: 900.0,
-            height: 800.0,
+            width: 1200.0,
+            height: 500.0,
             timer: Timer::new(Duration::from_millis(2000), TimerMode::Repeating),
         },
         AnimInfo {
@@ -208,8 +209,8 @@ fn menu_setup(
         BeeFly {
             aim: center,
             center,
-            width: 900.0,
-            height: 800.0,
+            width: 1200.0,
+            height: 500.0,
             timer: Timer::new(Duration::from_millis(2000), TimerMode::Repeating),
         },
         AnimInfo {
@@ -218,6 +219,39 @@ fn menu_setup(
         },
         MenuMarker,
     ));
+
+    if let Some(game_info) = game_info {
+        let score = format!("{}", game_info.score);
+
+        commands.spawn((
+            TextBundle::from_section(
+                score,
+                TextStyle {
+                    font: asset_server.load("fonts/HoneyBee-Regular.ttf"),
+                    font_size: 120.0,
+                    color: Color::rgb(0.9, 0.8, 0.5),
+                },
+            )
+            .with_style(Style {
+                position_type: PositionType::Absolute,
+                position: UiRect {
+                    top: Val::Percent(9.0),
+                    left: Val::Percent(07.8),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
+            MenuMarker,
+        ));
+        commands.spawn((
+            SpriteBundle {
+                transform: Transform::from_xyz(-520.0, 290.0, 120.0).with_scale(Vec3::splat(3.0)),
+                texture: asset_server.load("textures/scoreboard.png"),
+                ..Default::default()
+            },
+            MenuMarker,
+        ));
+    }
 }
 
 const NORMAL_BUTTON: Color = Color::rgb(1.0, 0.92, 0.80);

@@ -51,6 +51,10 @@ fn menu_setup(
                     size: Size::width(Val::Percent(100.0)),
                     align_items: AlignItems::Center,
                     justify_content: JustifyContent::Center,
+                    margin: UiRect {
+                        bottom: Val::Percent(-30.0),
+                        ..Default::default()
+                    },
                     ..default()
                 },
                 ..default()
@@ -132,6 +136,15 @@ fn menu_setup(
         1,
         Some(Vec2::new(1.0, 0.0)),
         None,
+    ));
+
+    commands.spawn((
+        SpriteBundle {
+            transform: Transform::from_xyz(0.0, 50.0, 50.0).with_scale(Vec3::splat(10.0)),
+            texture: asset_server.load("textures/logo.png"),
+            ..Default::default()
+        },
+        MenuMarker,
     ));
 
     commands.spawn((

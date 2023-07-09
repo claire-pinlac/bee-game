@@ -24,6 +24,7 @@ impl Plugin for BeeGame {
             .add_system(collisions.in_set(OnUpdate(GameState::Game)))
             .add_system(display_colliders.in_set(OnUpdate(GameState::Game)))
             .add_system(game_killer.in_set(OnUpdate(GameState::Game)))
+            .add_system(pillar_score.in_set(OnUpdate(GameState::Game)))
             .add_system(cleanup.in_schedule(OnExit(GameState::Game)));
     }
 }
@@ -87,6 +88,7 @@ fn setup(
 
 #[derive(Component)]
 struct Pillar {
+    passed_bee: bool,
     y_offset: f32,
 }
 
@@ -157,7 +159,7 @@ fn setup_pillars(commands: &mut Commands, asset_server: &Res<AssetServer>, wins:
     let window = wins.single();
 
     let mut timer = Timer::new(Duration::from_millis(2500), TimerMode::Repeating);
-    //timer.set_elapsed(Duration::MAX);
+    timer.set_elapsed(Duration::from_millis(2500));
     let pillar_shared = PillarShared {
         x_vel: 150.0,
         y_pos: 0.0,
@@ -303,6 +305,24 @@ fn pillar_spawner(
     }
 }
 
+fn pillar_score(
+    mut pillars: Query<(&Transform, &mut Pillar)>,
+    bees: Query<(&Transform, &BeeFly), Without<Pillar>>,
+    mut game_info: ResMut<GameInfo>,
+) {
+    let bee = bees.single();
+
+    for (t, mut p) in pillars.iter_mut() {
+        if !p.passed_bee {
+            if t.translation.x > bee.1.center.x {
+                p.passed_bee = true;
+                game_info.score += 1;
+                println!("Score!");
+            }
+        }
+    }
+}
+
 fn spawn_piller(commands: &mut Commands, pillar_shared: &ResMut<PillarShared>) {
     const HALF_WID: f32 = 24.0;
 
@@ -319,7 +339,10 @@ fn spawn_piller(commands: &mut Commands, pillar_shared: &ResMut<PillarShared>) {
             texture: pillar_shared.texture.clone(),
             ..Default::default()
         },
-        Pillar { y_offset },
+        Pillar {
+            passed_bee: false,
+            y_offset,
+        },
         Collider {
             colliders: vec![
                 AABB {
@@ -449,9 +472,6 @@ fn collisions(
 
     if collided {
         game_info.is_dead = true;
-        println!("Collided!");
-    } else {
-        println!("No collided :(");
     }
 }
 

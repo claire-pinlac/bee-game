@@ -46,6 +46,7 @@ struct PillarShared {
     y_pos_bounds: (f32, f32),
     spawn_timer: Timer,
     texture: Handle<Image>,
+    prop_texture: Handle<Image>,
 }
 
 fn setup(
@@ -214,6 +215,7 @@ fn setup_pillars(commands: &mut Commands, asset_server: &Res<AssetServer>, wins:
         y_pos_bounds: (-200.0, 200.0),
         spawn_timer: timer,
         texture: asset_server.load("textures/pipe.png"),
+        prop_texture: asset_server.load("textures/propeller.png"),
     };
 
     commands.insert_resource(pillar_shared);
@@ -334,7 +336,7 @@ fn pillar_move(
     for (mut t, e) in query.iter_mut() {
         t.translation.x += pillar_shared.x_vel * time.delta_seconds();
         if t.translation.x > pillar_shared.x_pos_bounds.1 {
-            commands.entity(e).despawn();
+            commands.entity(e).despawn_recursive();
         }
     }
 }
@@ -406,7 +408,18 @@ fn spawn_piller(commands: &mut Commands, pillar_shared: &ResMut<PillarShared>) {
             ],
         },
         BeeGameMarker,
-    ));
+    )).with_children(|parent| {
+        parent.spawn(SpriteBundle {
+            transform: Transform::from_xyz(0.0, 80.0, 0.0),
+            texture: pillar_shared.prop_texture.clone(),
+            ..Default::default()
+        });
+        parent.spawn(SpriteBundle {
+            transform: Transform::from_xyz(0.0, -90.0, 0.0),
+            texture: pillar_shared.prop_texture.clone(),
+            ..Default::default()
+        });
+    });
 }
 
 fn jump_input(
@@ -537,6 +550,6 @@ fn game_killer(game_info: Res<GameInfo>, mut game_state: ResMut<NextState<GameSt
 
 fn cleanup(mut commands: Commands, query: Query<Entity, With<BeeGameMarker>>) {
     for e in query.iter() {
-        commands.entity(e).despawn();
+        commands.entity(e).despawn_recursive();
     }
 }

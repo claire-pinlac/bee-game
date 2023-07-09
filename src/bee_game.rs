@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use bevy::{core_pipeline::bloom::BloomSettings, prelude::*};
 //use bevy_kira_audio::AudioPlugin;
+use bevy_prototype_debug_lines::*;
 
 pub struct BeeGame;
 
@@ -17,9 +18,15 @@ impl Plugin for BeeGame {
             .add_system(text_write)
             .add_system(text_update)
             .add_system(anim_handler)
-            .add_startup_system(audio_setup);
-        
+            .add_startup_system(audio_setup)
+            .add_system(collisions)
+            .add_system(display_colliders);
     }
+}
+
+#[derive(Resource)]
+struct GameInfo {
+    is_dead: bool,
 }
 
 #[derive(Resource)]
@@ -33,7 +40,14 @@ struct PillarShared {
     texture: Handle<Image>,
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>, wins: Query<&Window>,mut texture_atlases: ResMut<Assets<TextureAtlas>>,) {
+fn setup(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    wins: Query<&Window>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+) {
+    commands.insert_resource(GameInfo { is_dead: false });
+
     commands.spawn((
         Camera2dBundle {
             camera: Camera {
@@ -62,6 +76,69 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, wins: Query<&Wi
 #[derive(Component)]
 struct Pillar {
     y_offset: f32,
+}
+
+struct AABB {
+    l: f32,
+    r: f32,
+    t: f32,
+    b: f32,
+}
+
+impl AABB {
+    fn is_touching(&self, self_t: &Transform, other: &AABB, other_t: &Transform) -> bool {
+        let self_tl = self_t.transform_point(Vec3::new(self.l, self.t, 0.0));
+        let self_br = self_t.transform_point(Vec3::new(self.r, self.b, 0.0));
+        let other_tl = other_t.transform_point(Vec3::new(other.l, other.t, 0.0));
+        let other_br = other_t.transform_point(Vec3::new(other.r, other.b, 0.0));
+
+        self_tl.x < other_br.x
+            && self_br.x > other_tl.x
+            && self_br.y < other_tl.y
+            && self_tl.y > other_br.y
+    }
+
+    fn display(&self, debug_lines: &mut ResMut<DebugLines>, t: &Transform) {
+        let tl = t.transform_point(Vec3::new(self.l, self.t, 0.0));
+        let br = t.transform_point(Vec3::new(self.r, self.b, 0.0));
+        let tr = t.transform_point(Vec3::new(self.r, self.t, 0.0));
+        let bl = t.transform_point(Vec3::new(self.l, self.b, 0.0));
+
+        let w = 0.01;
+
+        debug_lines.line(tl, tr, w);
+        debug_lines.line(tr, br, w);
+        debug_lines.line(br, bl, w);
+        debug_lines.line(bl, tl, w);
+        debug_lines.line(tr, bl, w);
+        debug_lines.line(br, tl, w);
+    }
+}
+
+#[derive(Component)]
+struct Collider {
+    colliders: Vec<AABB>,
+}
+
+impl Collider {
+    fn is_touching(&self, self_t: &Transform, other: &Collider, other_t: &Transform) -> bool {
+        for a in &self.colliders {
+            for b in &other.colliders {
+                match a.is_touching(self_t, b, other_t) {
+                    true => return true,
+                    false => (),
+                }
+            }
+        }
+
+        false
+    }
+
+    fn display(&self, debug_lines: &mut ResMut<DebugLines>, t: &Transform) {
+        for aabb in &self.colliders {
+            aabb.display(debug_lines, t);
+        }
+    }
 }
 
 fn setup_pillars(commands: &mut Commands, asset_server: &Res<AssetServer>, wins: &Query<&Window>) {
@@ -132,7 +209,15 @@ fn setup_bee(
         AnimInfo {
             timer: Timer::new(Duration::from_millis(500), TimerMode::Repeating),
             num: 2,
-        }
+        },
+        Collider {
+            colliders: vec![AABB {
+                l: -35.0,
+                r: 35.0,
+                t: 35.0,
+                b: -35.0,
+            }],
+        },
     ));
 }
 
@@ -178,14 +263,18 @@ fn clouds_move(mut query: Query<(&mut Transform, &Cloud)>) {
     }
 }
 
-fn pillar_move(mut commands:Commands, mut query: Query<(&mut Transform, Entity), With<Pillar>>, pillar_shared: Res<PillarShared>, time: Res<Time>) {
+fn pillar_move(
+    mut commands: Commands,
+    mut query: Query<(&mut Transform, Entity), With<Pillar>>,
+    pillar_shared: Res<PillarShared>,
+    time: Res<Time>,
+) {
     for (mut t, e) in query.iter_mut() {
         t.translation.x += pillar_shared.x_vel * time.delta_seconds();
-        if t.translation.x > pillar_shared.x_pos_bounds.1{
+        if t.translation.x > pillar_shared.x_pos_bounds.1 {
             commands.entity(e).despawn();
         }
     }
-
 }
 
 fn pillar_spawner(
@@ -201,6 +290,8 @@ fn pillar_spawner(
 }
 
 fn spawn_piller(commands: &mut Commands, pillar_shared: &ResMut<PillarShared>) {
+    const HALF_WID: f32 = 24.0;
+
     let y_offset = (rand::random::<f32>() - 0.5) * 200.0;
 
     commands.spawn((
@@ -215,10 +306,32 @@ fn spawn_piller(commands: &mut Commands, pillar_shared: &ResMut<PillarShared>) {
             ..Default::default()
         },
         Pillar { y_offset },
+        Collider {
+            colliders: vec![
+                AABB {
+                    l: -HALF_WID,
+                    r: HALF_WID,
+                    t: 1000.0,
+                    b: 43.0,
+                },
+                AABB {
+                    l: -HALF_WID,
+                    r: HALF_WID,
+                    t: -50.0,
+                    b: -1000.0,
+                },
+            ],
+        },
     ));
 }
 
-fn jump_input(keys: Res<Input<KeyCode>>, mut pillar_shared: ResMut<PillarShared>, time: Res<Time>, asset_server: Res<AssetServer>, audio: Res<Audio>) {
+fn jump_input(
+    keys: Res<Input<KeyCode>>,
+    mut pillar_shared: ResMut<PillarShared>,
+    time: Res<Time>,
+    asset_server: Res<AssetServer>,
+    audio: Res<Audio>,
+) {
     if keys.just_pressed(KeyCode::Space) {
         pillar_shared.y_vel = 4.0;
         audio.play(asset_server.load("sounds/beep.wav"));
@@ -304,3 +417,30 @@ fn audio_setup(asset_server: Res<AssetServer>, audio: Res<Audio>) {
     audio.play(asset_server.load("sounds/farm.mp3"));
 }
 
+fn collisions(
+    bees: Query<(&Transform, &Collider), Without<Pillar>>,
+    pillars: Query<(&Transform, &Collider), With<Pillar>>,
+    mut game_info: ResMut<GameInfo>,
+) {
+    let bee = bees.single();
+    let mut collided = false;
+
+    for (t, c) in pillars.iter() {
+        if c.is_touching(t, bee.1, bee.0) {
+            collided = true;
+        }
+    }
+
+    if collided {
+        game_info.is_dead = true;
+        println!("Collided!");
+    } else {
+        println!("No collided :(");
+    }
+}
+
+fn display_colliders(mut debug_lines: ResMut<DebugLines>, query: Query<(&Transform, &Collider)>) {
+    for (t, c) in query.iter() {
+        c.display(&mut debug_lines, t);
+    }
+}

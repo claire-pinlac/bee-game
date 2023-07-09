@@ -16,7 +16,18 @@ enum GameState {
 fn main() {
     App::new()
         .add_state::<GameState>()
-        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .add_plugins(
+            DefaultPlugins
+                .set(ImagePlugin::default_nearest())
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "Beescape".into(),
+                        resizable: false,
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }),
+        )
         .add_plugin(DebugLinesPlugin::default())
         .add_plugin(AudioPlugin)
         .add_plugin(bee_game::BeeGame)

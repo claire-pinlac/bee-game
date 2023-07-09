@@ -422,8 +422,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "bee_game"
-version = "0.1.0"
+name = "beescape"
+version = "1.0.0"
 dependencies = [
  "bevy",
  "bevy_kira_audio",

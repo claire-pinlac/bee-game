@@ -15,10 +15,10 @@ impl Plugin for BeeGame {
             .add_system(pillar_move.in_set(OnUpdate(GameState::Game)))
             .add_system(jump_input.in_set(OnUpdate(GameState::Game)))
             .add_system(let_it_jump.in_set(OnUpdate(GameState::Game)))
-            .add_system(bee_fly.in_set(OnUpdate(GameState::Game)))
+            .add_system(bee_fly)
             .add_system(text_write.in_set(OnUpdate(GameState::Game)))
             .add_system(text_update.in_set(OnUpdate(GameState::Game)))
-            .add_system(anim_handler.in_set(OnUpdate(GameState::Game)))
+            .add_system(anim_handler)
             .add_startup_system(audio_setup.in_set(OnUpdate(GameState::Game)))
             .add_system(collisions.in_set(OnUpdate(GameState::Game)))
             //.add_system(display_colliders.in_set(OnUpdate(GameState::Game)))
@@ -190,18 +190,18 @@ fn setup_pillars(commands: &mut Commands, asset_server: &Res<AssetServer>, wins:
 }
 
 #[derive(Component)]
-struct BeeFly {
-    aim: Vec2,
-    center: Vec2,
-    width: f32,
-    height: f32,
-    timer: Timer,
+pub struct BeeFly {
+    pub aim: Vec2,
+    pub center: Vec2,
+    pub width: f32,
+    pub height: f32,
+    pub timer: Timer,
 }
 
 #[derive(Component)]
-struct AnimInfo {
-    timer: Timer,
-    num: usize,
+pub struct AnimInfo {
+    pub timer: Timer,
+    pub num: usize,
 }
 
 fn setup_bee(

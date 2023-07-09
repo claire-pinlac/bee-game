@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use bevy::{prelude::*, winit::WinitSettings};
+use bevy::prelude::*;
 use crate::GameState;
 use super::bee_game::{AnimInfo, BeeFly};
 
@@ -227,7 +227,7 @@ fn button_system(
     mut exit: EventWriter<bevy::app::AppExit>,
 ) {
     for (interaction, mut color, children, button) in &mut interaction_query {
-        let mut text = text_query.get_mut(children[0]).unwrap();
+        let _text = text_query.get_mut(children[0]).unwrap();
         match *interaction {
             Interaction::Clicked => {
                 //text.sections[0].value = "Bzzzz".to_string();

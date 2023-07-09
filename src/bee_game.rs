@@ -501,7 +501,7 @@ fn anim_handler(mut query: Query<(&mut TextureAtlasSprite, &mut AnimInfo)>, time
 }
 
 fn audio_setup(asset_server: Res<AssetServer>, audio: Res<Audio>) {
-    audio.play(asset_server.load("sounds/farm.mp3"));
+    audio.play(asset_server.load("sounds/farm2.mp3"));
 }
 
 fn collisions(

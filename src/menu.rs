@@ -11,7 +11,6 @@ impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(menu_setup.in_schedule(OnEnter(GameState::Menu)))
             .add_system(button_system.in_set(OnUpdate(GameState::Menu)))
-            .add_system(flying_bee.in_set(OnUpdate(GameState::Menu)))
             .add_system(cleanup.in_schedule(OnExit(GameState::Menu)));
     }
 }
@@ -69,6 +68,12 @@ fn menu_setup(
                             justify_content: JustifyContent::Center,
                             // vertically center child text
                             align_items: AlignItems::Center,
+                            margin: UiRect {
+                                left: Val::Percent(5.),
+                                right: Val::Percent(5.),
+                                top: Val::Percent(15.),
+                                bottom: Val::Percent(5.),
+                            },
                             ..default()
                         },
                         background_color: NORMAL_BUTTON.into(),
@@ -98,7 +103,7 @@ fn menu_setup(
                             margin: UiRect {
                                 left: Val::Percent(5.),
                                 right: Val::Percent(5.),
-                                top: Val::Percent(5.),
+                                top: Val::Percent(15.),
                                 bottom: Val::Percent(5.),
                             },
                             ..default()
@@ -136,7 +141,7 @@ fn menu_setup(
                     custom_size: Some(Vec2 { x: 80.0, y: 80.0 }),
                     ..Default::default()
                 },
-                transform: Transform::from_xyz(center.x, center.y, 500.0),
+                transform: Transform::from_xyz(center.x, center.y-300.0, 500.0),
                 texture_atlas:texture_atlas.clone(),
                 ..Default::default()
             },
@@ -144,7 +149,7 @@ fn menu_setup(
                 aim: center,
                 center,
                 width: 900.0,
-                height: 900.0,
+                height: 800.0,
                 timer: Timer::new(Duration::from_millis(2000), TimerMode::Repeating),
             },
             AnimInfo {
@@ -161,7 +166,7 @@ fn menu_setup(
                     custom_size: Some(Vec2 { x: 80.0, y: 80.0 }),
                     ..Default::default()
                 },
-                transform: Transform::from_xyz(center.x-400.0, center.y-250.0, 500.0),
+                transform: Transform::from_xyz(center.x-500.0, center.y-350.0, 500.0),
                 texture_atlas:texture_atlas.clone(),
                 ..Default::default()
             },
@@ -169,7 +174,32 @@ fn menu_setup(
                 aim: center,
                 center,
                 width: 900.0,
-                height: 900.0,
+                height: 800.0,
+                timer: Timer::new(Duration::from_millis(2000), TimerMode::Repeating),
+            },
+            AnimInfo {
+                timer: Timer::new(Duration::from_millis(500), TimerMode::Repeating),
+                num: 2,
+            },
+            
+            MenuMarker,
+        ));
+
+        commands.spawn((
+            SpriteSheetBundle {
+                sprite: TextureAtlasSprite {
+                    custom_size: Some(Vec2 { x: 80.0, y: 80.0 }),
+                    ..Default::default()
+                },
+                transform: Transform::from_xyz(center.x+500.0, center.y-350.0, 500.0),
+                texture_atlas:texture_atlas.clone(),
+                ..Default::default()
+            },
+            BeeFly {
+                aim: center,
+                center,
+                width: 900.0,
+                height: 800.0,
                 timer: Timer::new(Duration::from_millis(2000), TimerMode::Repeating),
             },
             AnimInfo {
@@ -226,6 +256,3 @@ fn cleanup(mut commands: Commands, query: Query<Entity, With<MenuMarker>>) {
     }
 }
 
-fn flying_bee(){
-    
-}

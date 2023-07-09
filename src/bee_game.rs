@@ -1,7 +1,6 @@
 use std::time::Duration;
 
 use bevy::{core_pipeline::bloom::BloomSettings, prelude::*};
-use bevy_kira_audio::AudioPlugin;
 use bevy_prototype_debug_lines::*;
 
 use crate::GameState;
@@ -22,7 +21,7 @@ impl Plugin for BeeGame {
             .add_system(anim_handler.in_set(OnUpdate(GameState::Game)))
             .add_startup_system(audio_setup.in_set(OnUpdate(GameState::Game)))
             .add_system(collisions.in_set(OnUpdate(GameState::Game)))
-            .add_system(display_colliders.in_set(OnUpdate(GameState::Game)))
+            //.add_system(display_colliders.in_set(OnUpdate(GameState::Game)))
             .add_system(game_killer.in_set(OnUpdate(GameState::Game)))
             .add_system(pillar_score.in_set(OnUpdate(GameState::Game)))
             .add_system(cleanup.in_schedule(OnExit(GameState::Game)));
@@ -87,6 +86,14 @@ fn setup(
         },
         BeeGameMarker,
     ));
+
+    commands.spawn((
+            SpriteBundle {
+                transform: Transform::from_xyz(-520.0, 290.0, 120.0).with_scale(Vec3::splat(3.0)),
+                texture: asset_server.load("textures/scoreboard.png"),
+                ..Default::default()
+            }
+            , BeeGameMarker));
 
     setup_pillars(&mut commands, &asset_server, &wins);
 

@@ -1,0 +1,91 @@
+use bevy::{prelude::*, winit::WinitSettings};
+
+pub struct MenuPlugin;
+
+impl Plugin for MenuPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_startup_system(menu_setup)
+        .add_system(button_system);
+    }
+}
+
+fn menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn((Camera2dBundle {
+        camera: Camera {
+            hdr: true,
+            ..default()
+        },
+        camera_2d: Camera2d {
+            clear_color: bevy::core_pipeline::clear_color::ClearColorConfig::Custom(Color::rgb(
+                1.0, 0.95, 0.84,
+            )),
+        },
+        ..default()
+    },));
+    commands
+        .spawn(NodeBundle {
+            style: Style {
+                size: Size::width(Val::Percent(100.0)),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            ..default()
+        })
+        .with_children(|parent| {
+            parent
+                .spawn(ButtonBundle {
+                    style: Style {
+                        size: Size::new(Val::Px(200.0), Val::Px(75.0)),
+                        // horizontally center child text
+                        justify_content: JustifyContent::Center,
+                        // vertically center child text
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },
+                    background_color: NORMAL_BUTTON.into(),
+                    ..default()
+                })
+                .with_children(|parent| {
+                    parent.spawn(TextBundle::from_section(
+                        "Button",
+                        TextStyle {
+                            font: asset_server.load("fonts/goodtimes.otf"),
+                            font_size: 40.0,
+                            color: Color::rgb(0.0, 0.08, 0.20),
+                        },
+                    ));
+                });
+        });
+}
+
+const NORMAL_BUTTON: Color = Color::rgb(1.0, 0.92, 0.80);
+const HOVERED_BUTTON: Color = Color::rgb(1.0, 0.94, 0.57);
+const PRESSED_BUTTON: Color = Color::rgb(1.0, 0.84, 0.48);
+
+fn button_system(
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor, &Children),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut text_query: Query<&mut Text>,
+) {
+    for (interaction, mut color, children) in &mut interaction_query {
+        let mut text = text_query.get_mut(children[0]).unwrap();
+        match *interaction {
+            Interaction::Clicked => {
+                text.sections[0].value = "Play".to_string();
+                *color = PRESSED_BUTTON.into();
+            }
+            Interaction::Hovered => {
+                text.sections[0].value = "Bzzzz".to_string();
+                *color = HOVERED_BUTTON.into();
+            }
+            Interaction::None => {
+                text.sections[0].value = "Play!!!".to_string();
+                *color = NORMAL_BUTTON.into();
+            }
+        }
+    }
+}
+

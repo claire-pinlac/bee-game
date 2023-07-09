@@ -427,6 +427,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_kira_audio",
+ "bevy_prototype_debug_lines",
  "rand",
 ]
 
@@ -836,6 +837,15 @@ dependencies = [
  "bitflags",
  "bytemuck",
  "radsort",
+]
+
+[[package]]
+name = "bevy_prototype_debug_lines"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "79b3d03aef02c038e30415712097916928bc375abeb8a6b332dae85a898c4a54"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]
